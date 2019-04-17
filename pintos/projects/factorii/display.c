@@ -1,17 +1,18 @@
-
-
+/* Project name : AFS system
+ * file name : display.c
+ * writer : JESOON KANG, 20170937
+ * last modified date : 2019.04.17 
+ * description :
+ * this file includes implements of Functions for display for printing AFS rails
+ *
+ *  */
+#ifndef JESNK_DISP
+#define JESNK_DISP
 #include <stdio.h>
 #include "devices/timer.h"
 #include "projects/factorii/jesnk.h"
 
 
-#ifndef JESNK_DISP
-#define JESNK_DISP
-
-
-
-// Symbols
-//
 char divider;
 char robotArm;
 int rail_1[RAIL_COL];
@@ -26,9 +27,7 @@ extern struct semaphore timer_RA3;
 extern struct semaphore IF3_feIngIsEmpty;
 extern struct semaphore IF3_coIngIsEmpty;
 
-extern int feIng;
 extern int coFeIng;
-extern int testSign;
 extern int NUM_FE_ORE;
 extern int NUM_CO_ORE;
 extern int NUM_FE_ING;
@@ -37,7 +36,11 @@ extern int NUM_CO_NEED;
 extern int NUM_FE_NEED;
 
 
-int tmp_jesnk;
+int* globalRailStatus;
+int time_clock;
+
+
+/*  Initialize display symbol */
 void display_init(char* display) {
     for (int i = 0; i < RAIL_COL; i++ ) {
         display[i] = 'X';
@@ -47,6 +50,9 @@ void display_init(char* display) {
 }
 
 
+
+
+/*  Setting display symbols corresponding to railStatus values */
 void display_setting(int* railStatus, char* display) {
     for (int i = 0; i <= 2; i ++) {
         if (*(railStatus+i) == 1) {
@@ -79,8 +85,6 @@ void display_setting(int* railStatus, char* display) {
         }
     } 
 
-    // POT DISPLAY
-    //
     switch (*(railStatus+4)) {
         case 2 : display[RAIL1OFFSET + DIS_POT_1_OFFSET] = 'i'; break;
         case 1 : display[RAIL1OFFSET + DIS_POT_1_OFFSET] = 'o'; break;
@@ -123,7 +127,11 @@ void display_setting(int* railStatus, char* display) {
     } 
 }
 
-int* globalRailStatus;
+
+
+
+
+/* This Function printing display */
 void display_show(char* display) {
    for (int i = 0; i < RAIL_ROW; i++) {
        for (int j = 0; j < RAIL_COL; j++) {
@@ -147,24 +155,33 @@ void display_show(char* display) {
    printf("MADE : CoFe=%d\n",coFeIng);
    printf("feisempty : %d, coIsEmpty: %d, \n",IF3_feIngIsEmpty.value, IF3_coIngIsEmpty.value );
 
-   printf("testSign : %d\n",testSign);
 }
 
 
+
+/*  This Function  printing display. runs by a thread */
 void display_run(int* railStatus) {
     globalRailStatus = railStatus;
     char* display  = (char*)malloc(sizeof(char)*RAIL_ROW*RAIL_COL); 
-    tmp_jesnk = 0;
+    time_clock = 0;
     display_init(display);
 
     printf("%c\n",display); 
+
+
+    /* when semaphores up, printing display */
     while(true) { 
         sema_down(&timer_disp);
         printf("\033[2J");
-        printf("Hello %d\n",tmp_jesnk);
-        tmp_jesnk++;
+        printf("Time : %d\n",time_clock);
+        time_clock++;
+        /*  Display symbols setting */
         display_setting(railStatus,display); 
+
+        /*  Printing display */
         display_show(display);
+
+        /*  sema_up for next sequence */
         sema_up(&timer_RA5);
         sema_up(&timer_RA6);
     }

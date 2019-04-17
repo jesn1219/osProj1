@@ -1,20 +1,21 @@
+/*  Project name : AFS system
+ *  file name : rail.c
+ *  writer : JESOON KANG, 20170937
+ *  file Description :
+ *  this file include Functions for rail initializing
+ *  */
+
+
+
+
 #include <stdio.h>
 #include "projects/factorii/jesnk.h"
 
 
 
 
-
-int robotArm_1_offset;
-int robotArm_2_offset;
-int pot_1_offset;
-int pot_2_offset;
-
-
-
+/*  Function for initializing rail Status */
 void rail_init(int* railStatus) {
-//    railStatus = (int*)malloc(sizeof(int)*RAIL_COL*2+4);
-
     for (int i =0 ; i < RAIL_COL*2; i++) {
         railStatus[i] = 0;
     }
@@ -29,16 +30,8 @@ void rail_init(int* railStatus) {
     railStatus[STAT_RBA2_3OFFSET] = 1;
 }
 
-void rail_update(int* railStatus) {
-    // railStatus[1] = 1;
-    for (int i =0 ; i < RAIL_COL; i++) {
-    }
-}
 
-
-
-
+/*  rail Status array initializing */
 void rail_run(int* railStatus) {
     rail_init(railStatus);
-    rail_update(railStatus);
 }

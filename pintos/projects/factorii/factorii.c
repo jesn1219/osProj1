@@ -1,59 +1,37 @@
-#include <stdio.h>
+/*
+ * Project name : AFS system
+ * file name : factorii.c
+ * writer : JESOON KANG, 20170937
+ * last modified date : 2019. 04.17
+ * description :
+ * main AFS works implements in this file.
+ * this file includess Functions for each Robot Arms, IFs, and other checking Functions,
+ * and implemented run_factorii function.
+ *  */
 
+
+
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "threads/init.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-
 #include "devices/timer.h"
-
 #include "projects/factorii/display.c"
 #include "projects/factorii/rail.c"
-
-int* railStatus;
-int feIng;
-char tmp;
-struct semaphore testSema;
-struct semaphore timeTick;
-struct semaphore timer_disp;
-
-struct semaphore RA1, RA3, RA5, IF1;
-struct semaphore RA2, RA4, RA6, IF2;
-struct semaphore timer_RA1, timer_RA3, timer_RA5, timer_IF1, timer_conveyer;
-struct semaphore timer_RA2, timer_RA4, timer_RA6, timer_IF2;
+#include "projects/factorii/factorii.h"
 
 
-struct semaphore IF3_IsAvail;
-struct semaphore IF3_feIng;
-struct semaphore IF3_coIng;
-struct semaphore IF3_feIngIsEmpty;
-struct semaphore IF3_coIngIsEmpty;
-struct semaphore TERMINATE;
-
-int NUM_FE_NEED;
-int NUM_CO_NEED;
-int NUM_FE_ORE_STORED;
-int NUM_CO_ORE_STORED;
-
-int NUM_FE_ORE;
-int NUM_CO_ORE;
 
 
-int NUM_FE_ING;
-int NUM_CO_ING;
-
-int terminateFlag;
-int terminateCount;
-int coFeIng;
-
-int testSign;
-
-
+/*  this Function runs for carrying the ores & ings.  
+ *  conveyer Function for conveyor thread*/
 void run_conveyer() {
     while(true) {
         sema_down(&timer_conveyer);
-        
+
+      /*  chage tmp values in IF. */  
         if (railStatus[4] == -1) {
             railStatus[4] = 0;
         }
@@ -62,6 +40,7 @@ void run_conveyer() {
         }
 
 
+        /*  carrying ores in rail 1 */
         if (!railStatus[2]) {
             railStatus[2] = railStatus[1];
             railStatus[1] = railStatus[0];
@@ -73,6 +52,8 @@ void run_conveyer() {
                 sema_up(&RA1);
             }
         }
+
+        /*  carrying ores in rail 2 */
         if (!railStatus[STAT_RAIL2OFFSET+2]) {
             railStatus[STAT_RAIL2OFFSET+2] = railStatus[STAT_RAIL2OFFSET+1];
             railStatus[STAT_RAIL2OFFSET+1] = railStatus[STAT_RAIL2OFFSET];
@@ -85,11 +66,8 @@ void run_conveyer() {
                 sema_up(&RA2);
             } 
         }
-        
-        if (railStatus[STAT_RAIL2OFFSET+4] == -1) {
-            railStatus[STAT_RAIL2OFFSET+4] = 0;
-        }
 
+        /*  carrying ings in rail 1 */ 
         if (!railStatus[8]) {
             railStatus[8] = railStatus[7];
             railStatus[7] = railStatus[6] == 1 ? 1 : 0 ;
@@ -102,6 +80,8 @@ void run_conveyer() {
                 sema_up(&RA5);
             }
         }
+
+        /*  carrying ings in rail 2 */
         if (!railStatus[STAT_RAIL2OFFSET+8]) {
             railStatus[STAT_RAIL2OFFSET+8] = railStatus[STAT_RAIL2OFFSET+7];
             railStatus[STAT_RAIL2OFFSET+7] = railStatus[STAT_RAIL2OFFSET+6] == 1 ? 1 : 0 ;
@@ -114,6 +94,8 @@ void run_conveyer() {
                 sema_up(&RA6);
             }
         }
+
+        /*  calculate ings number */
         NUM_FE_ING = 0; 
         NUM_CO_ING = 0;
         for (int i = 6; i <=8; i++) {
@@ -131,16 +113,22 @@ void run_conveyer() {
             NUM_CO_ING++;
         }
 
+
+
+        /*  check terminate condition */
         if ( (NUM_FE_ORE + NUM_FE_ING < IF3_feIngIsEmpty.value) || (NUM_CO_ORE + NUM_CO_ING < IF3_coIngIsEmpty.value)) {
             if (railStatus[STAT_POT3OFFSET] == 0)  {
-                sema_up(&TERMINATE); 
+                /*  terminate Flag up */
                 terminateFlag = 1; 
             }
+
         }
+
+        /* terminate AFS program . */
         if (terminateFlag) {
             terminateCount++;
             if (terminateCount >= 3) {
-                printf("######################################\n");
+                printf("######################################\n\n\n");
                 printf("AFS is terminated\n");
 
 
@@ -151,11 +139,13 @@ void run_conveyer() {
             }
         }
 
-
+        /*  increate semaphore for working display */
         sema_up(&timer_disp);
     }
 }
 
+
+/*  Function of Robot Arm 1 for a thread  */
 void run_RA1() {
     while (true) {
         sema_down(&timer_RA1);
@@ -172,6 +162,7 @@ void run_RA1() {
     }
 }
 
+/*  Function of Robot Arm 2 for a thread */
 void run_RA2() {
     while (true) {
         sema_down(&timer_RA2);
@@ -188,8 +179,7 @@ void run_RA2() {
 }
 
 
-
-
+/*  Function of IF 1 for a thread */
 void run_IF1() {
     while(true)  {
         sema_down(&timer_IF1);
@@ -204,7 +194,7 @@ void run_IF1() {
     }
 }
 
-
+/*  Function of IF 2 for a thread */
 void run_IF2() {
     while(true) {
         sema_down(&timer_IF2);
@@ -220,7 +210,7 @@ void run_IF2() {
 }
 
 
-
+/* Function of Robot Arm 3 for a thread */
 void run_RA3() {
     while(true) {
         sema_down(&timer_RA3);
@@ -236,6 +226,7 @@ void run_RA3() {
     }
 }
 
+/* Function of Robot Arm 4 for a thread */
 void run_RA4() {
     while(true) {
         sema_down(&timer_RA4);
@@ -251,6 +242,7 @@ void run_RA4() {
     }
 }
 
+/*  Function of Robot Arm 5 for a thread */
 void run_RA5() {
     while(true) {
         sema_down(&timer_RA5);
@@ -266,6 +258,7 @@ void run_RA5() {
     }
 }
 
+/*  Function of Robot Arm 6 for a thread */
 void run_RA6() {
     while(true) {
          
@@ -282,6 +275,7 @@ void run_RA6() {
 }
 
 
+/*  Function for producing time semaphore */
 void timeTicker() {
    while (true) {
        timer_sleep(100);
@@ -291,12 +285,13 @@ void timeTicker() {
 }
 
 
+/*  every 1 second, semaphore time semaphore produces, and sema up timer_conveyer  */
 void timeTickee() {
     sema_down(&timeTick); 
     sema_up(&timer_conveyer);     
 }
 
-
+/*  Function for IF 3 for a thread */
 void run_IF3() {
    while (true) {
        sema_down(&IF3_IsAvail);
@@ -313,6 +308,9 @@ void run_IF3() {
        coFeIng++;
    }
 }
+
+
+/*  Function for IF 3, input co & fe ings and signaling to produce cofeing  */
 void run_IF3_check() {
     while (true) {
         for (int i =0; i < NUM_FE_NEED; i++) {
@@ -327,6 +325,9 @@ void run_IF3_check() {
 
 
 
+/*  main Function, set arguments ( number of co/fe ores, required numbers of ings  for coFeIng 
+ *  this function initialize semaphores, and create threads
+ *  */
 void run_factorii(char **argv) {
     printf("input : ");
     for (int i = 1; i <= 4; i++) {
@@ -342,21 +343,22 @@ void run_factorii(char **argv) {
 
 
     railStatus = (int*)malloc(sizeof(int)*NUM_STAT);
-    feIng = 0;
     struct condition testCond;
 
-    sema_init(&TERMINATE,0);
 
     sema_init(&timeTick,0);
+    /*  initializing semaphores for  Robot Arms  */
     sema_init(&RA1,0); sema_init(&RA3,0); sema_init(&RA5,0);
     sema_init(&RA2,0); sema_init(&RA4,0); sema_init(&RA6,0);
-    
+   
+   /*  initializing semaphores for IFs */ 
     sema_init(&IF1,0); sema_init(&IF2,0); 
-    
+
     /* IF3 semas  */ 
     sema_init(&IF3_coIngIsEmpty,NUM_CO_NEED); sema_init(&IF3_feIngIsEmpty,NUM_FE_NEED); sema_init(&IF3_IsAvail,0);
     sema_init(&IF3_coIng,0); sema_init(&IF3_feIng,0);
 
+    /*  timer semaphores initializing */
     sema_init(&timer_RA1,0); sema_init(&timer_IF1,0); sema_init(&timer_RA3,0); sema_init(&timer_RA5,0); 
     sema_init(&timer_RA2,0); sema_init(&timer_IF2,0); sema_init(&timer_RA4,0); sema_init(&timer_RA6,0);
     sema_init(&timer_conveyer,0); sema_init(&timer_disp,1);     
@@ -374,10 +376,9 @@ void run_factorii(char **argv) {
     thread_create("RA4",1, &run_RA4, NULL);
     thread_create("RA6",1, &run_RA6, NULL);
     thread_create("IF2",1, &run_IF2, NULL);
-    struct semaphore sem_jenk;
-    printf("implement factorii ! \n");
+    
+   /*  initalize rail Status */ 
     rail_run(railStatus);
     thread_create("display",1,&display_run,railStatus); 
     
-    sema_down(&TERMINATE);
 }
