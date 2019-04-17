@@ -141,6 +141,8 @@ void display_show(char* display) {
 
 
    }
+   /*  for Debuging */
+   /* 
    for (int i = 0; i < STAT_RAIL2OFFSET; i++) {
       printf("%d;",globalRailStatus[i]);
    }
@@ -148,12 +150,14 @@ void display_show(char* display) {
    for (int i = STAT_RAIL2OFFSET; i < 21; i++) {
        printf("%d;",globalRailStatus[i]);
    }
+    */
 
+   
    printf("\n");
 
    printf("LEFT : FeOre=%d, CoOre=%d, FeIng=%d, CoIng=%d\n",NUM_FE_ORE,NUM_CO_ORE,NUM_FE_ING,NUM_CO_ING);
    printf("MADE : CoFe=%d\n",coFeIng);
-   printf("feisempty : %d, coIsEmpty: %d, \n",IF3_feIngIsEmpty.value, IF3_coIngIsEmpty.value );
+//    printf("feisempty : %d, coIsEmpty: %d, \n",IF3_feIngIsEmpty.value, IF3_coIngIsEmpty.value );
 
 }
 
